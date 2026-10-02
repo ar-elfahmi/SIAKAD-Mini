@@ -1,8 +1,31 @@
 package main
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"context"
+	"log"
+	"os"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
 
 func main() {
+	databaseURL := os.Getenv("DATABASE_URL")
+
+	poll, err := pgxpool.New(context.Background(), databaseURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer poll.Close()
+
+	err = poll.Ping(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	log.Println("Database Connected")
+
 	app := fiber.New()
 
 	courses := []Course{

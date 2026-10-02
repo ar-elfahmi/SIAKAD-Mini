@@ -1,0 +1,8 @@
+CREATE TABLE courses (
+    id SERIAL PRIMARY KEY,
+    kode_mk VARCHAR(20) UNIQUE NOT NULL,
+    nama_mk VARCHAR(100) NOT NULL,
+    sks INTEGER NOT NULL,
+    semester INTEGER NOT NULL,
+    kuota INTEGER NOT NULL
+);
