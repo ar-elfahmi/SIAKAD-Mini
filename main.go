@@ -7,9 +7,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env")
+	}
+		
 	databaseURL := os.Getenv("DATABASE_URL")
 
 	poll, err := pgxpool.New(context.Background(), databaseURL)
@@ -26,50 +31,41 @@ func main() {
 	
 	log.Println("Database Connected")
 
-	app := fiber.New()
-
-	courses := []Course{
-		{
-			ID:       1,
-			KodeMK:   "IF101",
-			NamaMK:   "Pemerograman Backend Lanjut Praktikum",
-			SKS:      "3",
-			Semester: "5",
-			Kuota:    "40",
-		},
-		{
-			ID:       2,
-			KodeMK:   "ML032",
-			NamaMK:   "Mesin Learning",
-			SKS:      "2",
-			Semester: "5",
-			Kuota:    "40",
-		},
-		{
-			ID:       1,
-			KodeMK:   "IF100",
-			NamaMK:   "Pemerograman Backend Lanjut Teori",
-			SKS:      "1",
-			Semester: "5",
-			Kuota:    "40",
-		},
-		{
-			ID:       1,
-			KodeMK:   "DT001",
-			NamaMK:   "Design Thingking",
-			SKS:      "2",
-			Semester: "5",
-			Kuota:    "40",
-		},
-		{
-			ID:       1,
-			KodeMK:   "KWU13",
-			NamaMK:   "Kewirausahaan",
-			SKS:      "2",
-			Semester: "5",
-			Kuota:    "40",
-		},
+	courses := []Course{}
+	
+	rows, err := poll.Query(
+		context.Background(),
+		`SELECT id, kode_mk, nama_mk, sks, semester, kuota FROM courses`,
+	)
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var course Course
+
+		err := rows.Scan(
+			&course.ID,
+			&course.KodeMK,
+			&course.NamaMK,
+			&course.SKS,
+			&course.Semester,
+			&course.Kuota,
+		)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		courses = append(courses, course)
+	}
+
+	if err := rows.Err(); err != nil{
+		log.Fatal(err)
+	}
+	
+	app := fiber.New()
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("yey my first hello world")
