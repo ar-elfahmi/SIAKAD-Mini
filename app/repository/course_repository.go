@@ -12,12 +12,15 @@ type CourseRepository struct {
 	Pool *pgxpool.Pool
 }
 
-func (r *CourseRepository) GetAllCourses(ctx context.Context) ([]model.Course, error) {
+func (r *CourseRepository) GetAllCourses(ctx context.Context, semester int) ([]model.Course, error) {
 	courses := []model.Course{}
 
-	rows, err := r.Pool.Query(
-		context.Background(),
-		`SELECT id, kode_mk, nama_mk, sks, semester, kuota FROM courses`,
+	rows, err := r.Pool.Query( 
+		ctx,
+		`SELECT id, kode_mk, nama_mk, sks, semester, kuota 
+		FROM courses
+		WHERE semester = $1`,
+		semester,
 	)
 	if err != nil {
 		return nil, err

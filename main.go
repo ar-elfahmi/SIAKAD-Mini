@@ -43,7 +43,8 @@ func main() {
 		return c.SendString("yey my first hello world")
 	})
 	app.Get("/api/v1/courses", func(c *fiber.Ctx) error {
-		courses, err := courseRepository.GetAllCourses(c.Context())
+		semester := c.QueryInt("semester", 0)
+		courses, err := courseRepository.GetAllCourses(c.Context(), semester)
 		if err != nil {
 			return err
 		}
