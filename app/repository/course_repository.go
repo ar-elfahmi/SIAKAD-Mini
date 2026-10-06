@@ -12,15 +12,23 @@ type CourseRepository struct {
 	Pool *pgxpool.Pool
 }
 
-func (r *CourseRepository) GetAllCourses(ctx context.Context, semester int) ([]model.Course, error) {
+func (r *CourseRepository) GetAllCourses(
+	ctx context.Context, 
+	semester int,
+	search string,) ([]model.Course, error) {
 	courses := []model.Course{}
 
 	rows, err := r.Pool.Query( 
 		ctx,
 		`SELECT id, kode_mk, nama_mk, sks, semester, kuota 
 		FROM courses
-		WHERE semester = $1`,
+		WHERE semester = $1
+		AND (
+			kode_mk ILIKE $2
+			OR nama_mk ILIKE $2
+			)`,
 		semester,
+		"%"+search+"%",
 	)
 	if err != nil {
 		return nil, err
