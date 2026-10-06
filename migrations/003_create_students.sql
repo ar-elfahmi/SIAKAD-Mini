@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS students (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    nim VARCHAR(12) NOT NULL UNIQUE,
+    nama VARCHAR(100) NOT NULL,
+    prodi VARCHAR(100) NOT NULL,
+    angkatan INTEGER NOT NULL,
+    ipk_terakhir NUMERIC(3,2),
+    deleted_at TIMESTAMPTZ
+);

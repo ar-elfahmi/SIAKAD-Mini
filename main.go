@@ -45,9 +45,11 @@ func main() {
 	app.Get("/api/v1/courses", func(c *fiber.Ctx) error {
 		semester := c.QueryInt("semester", 0)
 		search := c.Query("search")
+		available := c.QueryBool("available", false)
 		
 		courses, err := courseRepository.GetAllCourses(c.Context(), semester, 
-		search,)
+		search,
+		available,)
 		if err != nil {
 			return err
 		}
