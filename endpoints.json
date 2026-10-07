@@ -1,0 +1,367 @@
+{
+  "info": {
+    "_postman_id": "siakad-mini-2026-10-06",
+    "name": "SIAKAD-Mini",
+    "description": "## SIAKAD-Mini API Collection\n\nKoleksi endpoint API untuk project **SIAKAD-Mini** (Go + Fiber + PostgreSQL + pgx).\n\n### Cara import\n- **Postman**: File → Import → pilih file `endpoints.json`\n- **HTTPie Desktop**: File → Open / Import Collection (baca Postman v2.1)\n- **Insomnia / Bruno**: Import as Postman Collection v2.1\n\n### Variable\n- `{{base_url}}` — default `http://localhost:3000`. Override di collection variables atau environment.\n\n### Maintenance\nLihat `AGENTS.md`. Setiap endpoint baru/berubah/dihapus → update file ini.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "Isi setelah login (copy dari response `access_token`). Dipakai di header `Authorization: Bearer {{token}}`."
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Health check. Response: plain text `\"yey my first hello world\"`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@siakad.local\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Login. Balikin `access_token` (JWT, 1 jam).\n\n**Body:** `email` (string, required), `password` (string, required).\n\n**Response 200:**\n```json\n{\n  \"access_token\": \"eyJhbGciOi...\",\n  \"token_type\": \"Bearer\",\n  \"expires_in\": 3600,\n  \"user\": { \"id\": 1, \"email\": \"admin@siakad.local\", \"role\": \"admin\" }\n}\n```\n\n**Akun seed (password semua = `Password123!`):**\n- `admin@siakad.local` (admin)\n- `mahasiswa01@siakad.local` ... `mahasiswa20@siakad.local` (mahasiswa)\n\n**Error 401:** email/password salah atau akun soft-deleted."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/auth/me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "me"]
+            },
+            "description": "Info user dari JWT. Untuk cek token masih valid + lihat role.\n\n**Header:** `Authorization: Bearer <token>` (required).\n\n**Response 200:**\n```json\n{\n  \"id\": 2,\n  \"email\": \"mahasiswa01@siakad.local\",\n  \"role\": \"mahasiswa\",\n  \"students\": {\n    \"nim\": \"187221000001\",\n    \"nama\": \"Mahasiswa 01\",\n    \"prodi\": \"Teknik Informatika\",\n    \"angkatan\": 2024\n  }\n}\n```\n\nField `students` hanya muncul untuk role `mahasiswa`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "GET /api/v1/courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/courses?semester=3&search=&available=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "courses"],
+              "query": [
+                { "key": "semester", "value": "3", "description": "int (0 = no filter). Filter by semester." },
+                { "key": "search", "value": "", "description": "string. ILIKE match on kode_mk atau nama_mk." },
+                { "key": "available", "value": "true", "description": "bool. true = hanya course dengan sisa_kuota > 0." }
+              ]
+            },
+            "description": "List semua courses dengan filter opsional.\n\n**Response shape:** array `[{id, kode_mk, nama_mk, sks, semester, kuota, terisi, sisa_kuota}, ...]`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Students",
+      "item": [
+        {
+          "name": "GET /api/v1/students — baseline",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            },
+            "description": "Default tanpa filter (page=1, per_page=10, sort=nama).\n\n**Response shape:**\n```json\n{\n  \"data\": [{\"id\":1,\"nim\":\"...\",\"nama\":\"...\",\"prodi\":\"...\",\"angkatan\":2024,\"ipk_terakhir\":3.5}],\n  \"meta\": {\"current_page\":1, \"per_page\":10, \"total\":20, \"last_page\":2}\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/students — filter prodi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students?prodi=Teknik+Informatika",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"],
+              "query": [
+                { "key": "prodi", "value": "Teknik Informatika", "description": "string, opsional. Filter by program studi (exact match)." }
+              ]
+            },
+            "description": "Filter by prodi."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/students — filter angkatan",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students?angkatan=2024",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"],
+              "query": [
+                { "key": "angkatan", "value": "2024", "description": "int, opsional. Filter by tahun angkatan." }
+              ]
+            },
+            "description": "Filter by angkatan (exact match)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/students — search by nama",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students?search=Mahasiswa+01",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"],
+              "query": [
+                { "key": "search", "value": "Mahasiswa 01", "description": "string, opsional. ILIKE match pada nim atau nama." }
+              ]
+            },
+            "description": "Search by nama (ILIKE)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/students — search by nim",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students?search=187221000005",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"],
+              "query": [
+                { "key": "search", "value": "187221000005", "description": "string, opsional. ILIKE match pada nim atau nama." }
+              ]
+            },
+            "description": "Search by nim (ILIKE)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/students — sort by IPK descending",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students?sort=-ipk_terakhir&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"],
+              "query": [
+                { "key": "sort", "value": "-ipk_terakhir", "description": "string. Pilihan valid: \"nama\" (ASC) atau \"-ipk_terakhir\" (DESC). Default: \"nama\"." },
+                { "key": "per_page", "value": "5", "description": "int, default 10, max 50." }
+              ]
+            },
+            "description": "Sort by ipk_terakhir descending (top performers first)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/students — pagination (page 2, per_page 5)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students?page=2&per_page=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"],
+              "query": [
+                { "key": "page", "value": "2", "description": "int, default 1, min 1." },
+                { "key": "per_page", "value": "5", "description": "int, default 10, max 50." }
+              ]
+            },
+            "description": "Ambil data halaman 2 dengan 5 item per halaman."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/students — per_page capped at 50",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students?per_page=100",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"],
+              "query": [
+                { "key": "per_page", "value": "100", "description": "int, default 10, max 50. Server memaksa max 50, request 100 tetap di-cap ke 50." }
+              ]
+            },
+            "description": "Test batas atas: request 100 tapi server hanya me-return max 50 data."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/students/{id} — by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "1"]
+            },
+            "description": "Detail mahasiswa by id. Response: object student dengan `total_sks`, `batas_sks` (aturan IPK: ≥3.0=24, ≥2.5=21, ≥2.0=18, <2.0=15), dan `courses` (array mata kuliah yang diambil, di-join dari enrollments + courses). Soft-deleted (deleted_at NOT NULL) atau id tidak ada → 404."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/students/{id} — 404 (id tidak ada)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/9999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "9999"]
+            },
+            "description": "Test 404: id 9999 tidak ada. Response: 404 `{\"error\": \"student not found\"}`."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/students",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nim\": \"187221000099\",\n  \"nama\": \"Mahasiswa Baru\",\n  \"email\": \"baru@siakad.local\",\n  \"prodi\": \"Teknik Informatika\",\n  \"angkatan\": 2024,\n  \"ipk_terakhir\": 3.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            },
+            "description": "Tambah mahasiswa baru. **Admin only.**\n\n**Body:** `nim` (12 digit string, required), `nama` (string, required), `email` (string dengan `@`, required), `prodi` (string, required), `angkatan` (int, 1000–current year, required), `ipk_terakhir` (float 0–4, opsional).\n\nPassword default user baru = NIM (di-hash bcrypt).\n\n**Response 201:** object `Student` lengkap.\n\n**Error 422:** NIM ≠ 12 digit, nama/email/prodi kosong, angkatan invalid, IPK di luar 0–4.\n**Error 409:** NIM atau email sudah terdaftar."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /api/v1/students/{id}",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama\": \"Mahasiswa Updated\",\n  \"prodi\": \"Sistem Informasi\",\n  \"angkatan\": 2024,\n  \"ipk_terakhir\": 3.5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "1"]
+            },
+            "description": "Update data mahasiswa. **Admin only.**\n\n**Body:** `nama` (string, required), `prodi` (string, required), `angkatan` (int > 0, required), `ipk_terakhir` (float 0–4, opsional).\n\n**Response 200:** object `Student` setelah update.\n**Error 404:** id tidak ada."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/v1/students/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "1"]
+            },
+            "description": "Soft-delete mahasiswa. **Admin only.** Set `deleted_at = NOW()` di tabel `students` (dan user tetap ada tapi tidak bisa login karena filter `s.deleted_at IS NULL` di `FindUserByEmail`).\n\n**Response 204:** No Content.\n**Error 404:** id tidak ada."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Enrollments",
+      "item": [
+        {
+          "name": "POST /api/v1/enrollments",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_id\": 1,\n  \"tahun_akademik\": \"2024-2025-1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments"]
+            },
+            "description": "Ambil (enroll) mata kuliah. **Mahasiswa only.** Student ID otomatis dari token.\n\n**Body:** `course_id` (int > 0, required), `tahun_akademik` (string non-empty, required, contoh `\"2024-2025-1\"`).\n\n**Response 201:** object `Enrollment`.\n\n**Error rules:**\n- `409 Conflict` — mata kuliah sudah pernah diambil (`ErrEnrollmentAlreadyExists`).\n- `404 Not Found` — `course_id` tidak ada.\n- `422` — kuota course penuh (`ErrCourseFull`).\n- `422` — batas SKS terlampaui (berdasarkan IPK: ≥3.0=24, ≥2.5=21, ≥2.0=18, <2.0=15) (`ErrSKSLimitExceeded`).\n- `404` — student tidak ditemukan dari token."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/v1/enrollments/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/enrollments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "enrollments", "1"]
+            },
+            "description": "Batal enroll mata kuliah. **Mahasiswa only.** Hanya boleh hapus enrollment milik sendiri.\n\n**Response 204:** No Content.\n\n**Error:**\n- `404 Not Found` — enrollment id tidak ada.\n- `403 Forbidden` — enrollment bukan milik mahasiswa dari token ini."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
