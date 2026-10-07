@@ -22,9 +22,17 @@ func (r *AuthRepository) FindUserByEmail(
 
 	err := r.Pool.QueryRow(
 		ctx,
-		`SELECT id, email, password, role
-		FROM users
-		WHERE email = $1`,
+		`SELECT
+    u.id,
+    u.email,
+    u.role
+		FROM users u
+		LEFT JOIN students s ON s.user_id = u.id
+		WHERE u.email = $1
+  AND (
+      u.role = 'admin'
+      OR s.deleted_at IS NULL
+  )`,
 		email,
 	).Scan(
 		&user.ID,
