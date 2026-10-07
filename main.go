@@ -312,5 +312,56 @@ func main() {
 
 		return c.Status(fiber.StatusCreated).JSON(student)
 	})
+	app.Put("/api/v1/students/:id",
+		authMiddleware,
+		middleware.RequireRole("admin"),
+		func(c *fiber.Ctx) error {
+
+			id, err := c.ParamsInt("id")
+			if err != nil {
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+					"error": "student not found",
+				})
+			}
+
+			var req model.UpdateStudentRequest
+
+			if err := c.BodyParser(&req); err != nil {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+					"error": "invalid request body",
+				})
+			}
+
+			if req.Nama == "" || req.Prodi == "" || req.Angkatan <= 0 {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+					"error": "data tidak valid",
+				})
+			}
+
+			if req.IPKTerakhir != nil &&
+				(*req.IPKTerakhir < 0 || *req.IPKTerakhir > 4) {
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+					"error": "ipk harus berada di antara 0 dan 4",
+				})
+			}
+
+			student, err := studentRepository.UpdateStudent(
+				c.Context(),
+				id,
+				req,
+			)
+
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+						"error": "student not found",
+					})
+				}
+
+				return err
+			}
+
+			return c.JSON(student)
+		})
 	app.Listen(":3000")
 }

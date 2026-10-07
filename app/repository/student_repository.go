@@ -214,3 +214,41 @@ func (r *StudentRepository) GetStudentIDByUserID(ctx context.Context, userID int
 
 	return studentID, err
 }
+func (r *StudentRepository) UpdateStudent(
+	ctx context.Context,
+	id int,
+	req model.UpdateStudentRequest,
+) (*model.Student, error) {
+
+	var student model.Student
+
+	err := r.Pool.QueryRow(
+		ctx,
+		`UPDATE students
+		SET nama = $1,
+			prodi = $2,
+			angkatan = $3,
+			ipk_terakhir = $4
+		WHERE id = $5
+			AND deleted_at IS NULL
+		RETURNING id, nim, nama, prodi, angkatan, COALESCE(ipk_terakhir, 0)`,
+		req.Nama,
+		req.Prodi,
+		req.Angkatan,
+		req.IPKTerakhir,
+		id,
+	).Scan(
+		&student.ID,
+		&student.NIM,
+		&student.Nama,
+		&student.Prodi,
+		&student.Angkatan,
+		&student.IPKTerakhir,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &student, nil
+}
