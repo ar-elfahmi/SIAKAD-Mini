@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/ar-elfahmi/SIAKAD-Mini/app/model"
 )
@@ -251,4 +252,26 @@ func (r *StudentRepository) UpdateStudent(
 	}
 
 	return &student, nil
+}
+func (r *StudentRepository) DeleteStudent(
+	ctx context.Context,
+	id int,
+) error {
+	result, err := r.Pool.Exec(
+		ctx,
+		`UPDATE students
+		 SET deleted_at = NOW()
+		 WHERE id = $1
+		   AND deleted_at IS NULL`,
+		id,
+	)
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }

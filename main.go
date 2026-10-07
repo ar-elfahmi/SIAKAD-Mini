@@ -363,5 +363,31 @@ func main() {
 
 			return c.JSON(student)
 		})
+	app.Delete(
+		"/api/v1/students/:id",
+		authMiddleware,
+		middleware.RequireRole("admin"),
+		func(c *fiber.Ctx) error {
+			id, err := c.ParamsInt("id")
+			if err != nil {
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+					"error": "student not found",
+				})
+			}
+
+			err = studentRepository.DeleteStudent(c.Context(), id)
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+						"error": "student not found",
+					})
+				}
+
+				return err
+			}
+
+			return c.SendStatus(fiber.StatusNoContent)
+		},
+	)
 	app.Listen(":3000")
 }
