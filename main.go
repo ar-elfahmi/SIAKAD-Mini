@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -460,6 +461,56 @@ func main() {
 		}
 
 		return c.Status(fiber.StatusCreated).JSON(enrollment)
+	})
+	app.Delete("/api/v1/enrollments/:id", authMiddleware, middleware.RequireRole("mahasiswa"), func(c *fiber.Ctx) error {
+		enrollmentID, err := strconv.Atoi(c.Params("id"))
+		if err != nil || enrollmentID <= 0 {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "enrollment tidak ditemukan",
+			})
+		}
+
+		userID, ok := c.Locals("user_id").(float64)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "user tidak valid",
+			})
+		}
+
+		studentID, err := studentRepository.GetStudentIDByUserID(
+			c.Context(),
+			int(userID),
+		)
+		if err != nil {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "mahasiswa tidak ditemukan",
+			})
+		}
+
+		err = enrollmentRepository.DeleteEnrollment(
+			c.Context(),
+			enrollmentID,
+			studentID,
+		)
+
+		switch {
+		case errors.Is(err, repository.ErrEnrollmentNotFound):
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "enrollment tidak ditemukan",
+			})
+
+		case errors.Is(err, repository.ErrEnrollmentForbidden):
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"error": "akses ditolak",
+			})
+
+		case err != nil:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "gagal menghapus enrollment",
+			})
+		}
+
+		return c.SendStatus(fiber.StatusNoContent)
 	})
 	app.Listen(":3000")
 }

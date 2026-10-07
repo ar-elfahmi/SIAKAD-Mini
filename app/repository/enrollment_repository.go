@@ -21,6 +21,8 @@ var (
 	ErrCourseFull              = errors.New("course is full")
 	ErrStudentNotFound         = errors.New("student not found")
 	ErrSKSLimitExceeded        = errors.New("sks limit exceeded")
+	ErrEnrollmentNotFound      = errors.New("enrollment not found")
+	ErrEnrollmentForbidden     = errors.New("enrollment belongs to another student")
 )
 
 func (r *EnrollmentRepository) CreateEnrollment(
@@ -187,4 +189,40 @@ func (r *EnrollmentRepository) CreateEnrollment(
 	}
 
 	return &enrollment, nil
+}
+func (r *EnrollmentRepository) DeleteEnrollment(
+	ctx context.Context,
+	enrollmentID int,
+	studentID int,
+) error {
+
+	var ownerStudentID int
+
+	err := r.Pool.QueryRow(
+		ctx,
+		`SELECT student_id
+         FROM enrollments
+         WHERE id = $1`,
+		enrollmentID,
+	).Scan(&ownerStudentID)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return ErrEnrollmentNotFound
+		}
+		return err
+	}
+
+	if ownerStudentID != studentID {
+		return ErrEnrollmentForbidden
+	}
+
+	_, err = r.Pool.Exec(
+		ctx,
+		`DELETE FROM enrollments
+         WHERE id = $1`,
+		enrollmentID,
+	)
+
+	return err
 }
