@@ -25,6 +25,7 @@ func (r *AuthRepository) FindUserByEmail(
 		`SELECT
     u.id,
     u.email,
+    u.password,
     u.role
 		FROM users u
 		LEFT JOIN students s ON s.user_id = u.id
