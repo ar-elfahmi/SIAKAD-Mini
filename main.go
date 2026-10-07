@@ -17,6 +17,7 @@ import (
 
 	"github.com/ar-elfahmi/SIAKAD-Mini/app/model"
 	"github.com/ar-elfahmi/SIAKAD-Mini/app/repository"
+	"github.com/ar-elfahmi/SIAKAD-Mini/app/service"
 )
 
 func main() {
@@ -48,10 +49,58 @@ func main() {
 		Pool: pool,
 	}
 
+	authRepository := repository.AuthRepository{
+		Pool: pool,
+	}
+
+	authService := service.AuthService{
+		JWTSecret: os.Getenv("JWT_SECRET"),
+	}
+
 	app := fiber.New()
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("yey my first hello world")
+	})
+	app.Post("/api/v1/auth/login", func(c *fiber.Ctx) error {
+		var req model.LoginRequest
+
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+				"error": "invalid request body",
+			})
+		}
+
+		user, passwordHash, err := authRepository.FindUserByEmail(
+			c.Context(),
+			req.Email,
+		)
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "email atau password salah",
+			})
+		}
+
+		if err := bcrypt.CompareHashAndPassword(
+			[]byte(passwordHash),
+			[]byte(req.Password),
+		); err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "email atau password salah",
+			})
+		}
+
+		token, expiresIn, err := authService.GenerateToken(user)
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(model.LoginResponse{
+			AccessToken: token,
+			TokenType:   "Bearer",
+			ExpiresIn:   expiresIn,
+			User:        *user,
+		})
 	})
 	app.Get("/api/v1/courses", func(c *fiber.Ctx) error {
 		semester := c.QueryInt("semester", 0)
