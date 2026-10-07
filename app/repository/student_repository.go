@@ -142,3 +142,64 @@ func (r *StudentRepository) GetStudentByID(
 
 	return &d, nil
 }
+
+func (r *StudentRepository) CreateStudent(
+	ctx context.Context,
+	req model.CreateStudentRequest,
+	passwordHash string,
+) (*model.Student, error) {
+
+	tx, err := r.Pool.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	var userID int
+
+	err = tx.QueryRow(
+		ctx,
+		`INSERT INTO users (email, password, role)
+		VALUES ($1, $2, 'mahasiswa')
+		RETURNING id`,
+		req.Email,
+		passwordHash,
+	).Scan(&userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var student model.Student
+
+	err = tx.QueryRow(
+		ctx,
+		`INSERT INTO students
+		(user_id, nim, nama, prodi, angkatan, ipk_terakhir)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, nim, nama, prodi, angkatan, COALESCE(ipk_terakhir, 0)`,
+		userID,
+		req.NIM,
+		req.Nama,
+		req.Prodi,
+		req.Angkatan,
+		req.IPKTerakhir,
+	).Scan(
+		&student.ID,
+		&student.NIM,
+		&student.Nama,
+		&student.Prodi,
+		&student.Angkatan,
+		&student.IPKTerakhir,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return &student, nil
+}

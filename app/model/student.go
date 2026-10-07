@@ -1,12 +1,21 @@
 package model
 
 type Student struct {
-	ID         int     `json:"id"`
-	NIM        string  `json:"nim"`
-	Nama       string  `json:"nama"`
-	Prodi      string  `json:"prodi"`
-	Angkatan   int     `json:"angkatan"`
+	ID          int     `json:"id"`
+	NIM         string  `json:"nim"`
+	Nama        string  `json:"nama"`
+	Prodi       string  `json:"prodi"`
+	Angkatan    int     `json:"angkatan"`
 	IPKTerakhir float64 `json:"ipk_terakhir"`
+}
+
+type CreateStudentRequest struct {
+	NIM         string   `josn:"nim"`
+	Nama        string   `josn:"nama"`
+	Email       string   `josn:"email"`
+	Prodi       string   `josn:"prodi"`
+	Angkatan    int      `josn:"angkatan"`
+	IPKTerakhir *float64 `josn:"ipk_terakhir"`
 }
 
 type StudentMeta struct {

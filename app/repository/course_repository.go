@@ -13,13 +13,13 @@ type CourseRepository struct {
 }
 
 func (r *CourseRepository) GetAllCourses(
-	ctx context.Context, 
+	ctx context.Context,
 	semester int,
 	search string,
-	avilable bool,) ([]model.Course, error) {
+	avilable bool) ([]model.Course, error) {
 	courses := []model.Course{}
 
-	rows, err := r.Pool.Query( 
+	rows, err := r.Pool.Query(
 		ctx,
 		`SELECT c.id, c.kode_mk, c.nama_mk, c.sks, c.semester, c.kuota,
 			COUNT(e.course_id) AS terisi,
