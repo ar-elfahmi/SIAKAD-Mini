@@ -54,6 +54,8 @@ func main() {
 		Pool: pool,
 	}
 
+	enrollmentRepository := repository.EnrollmentRepository{Pool: pool}
+
 	authService := service.AuthService{
 		JWTSecret: os.Getenv("JWT_SECRET"),
 	}
@@ -389,5 +391,75 @@ func main() {
 			return c.SendStatus(fiber.StatusNoContent)
 		},
 	)
+	app.Post("/api/v1/enrollments", authMiddleware, middleware.RequireRole("mahasiswa"), func(c *fiber.Ctx) error {
+		var req model.CreateEnrollmentRequest
+
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+				"error": "invalid request body",
+			})
+		}
+
+		if req.CourseID <= 0 || req.TahunAkademik == "" {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+				"error": "course_id dan tahun_akademik wajib diisi",
+			})
+		}
+
+		userID, ok := c.Locals("user_id").(float64)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "token tidak valid",
+			})
+		}
+
+		studentID, err := studentRepository.GetStudentIDByUserID(
+			c.Context(),
+			int(userID),
+		)
+		if err != nil {
+			return err
+		}
+
+		enrollment, err := enrollmentRepository.CreateEnrollment(
+			c.Context(),
+			studentID,
+			req,
+		)
+
+		if err != nil {
+			switch {
+			case errors.Is(err, repository.ErrEnrollmentAlreadyExists):
+				return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+					"error": "mata kuliah sudah diambil",
+				})
+
+			case errors.Is(err, repository.ErrCourseNotFound):
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+					"error": "course tidak ditemukan",
+				})
+
+			case errors.Is(err, repository.ErrCourseFull):
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+					"error": "kuota mata kuliah sudah penuh",
+				})
+
+			case errors.Is(err, repository.ErrSKSLimitExceeded):
+				return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+					"error": err.Error(),
+				})
+
+			case errors.Is(err, repository.ErrStudentNotFound):
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+					"error": "student tidak ditemukan",
+				})
+
+			default:
+				return err
+			}
+		}
+
+		return c.Status(fiber.StatusCreated).JSON(enrollment)
+	})
 	app.Listen(":3000")
 }
