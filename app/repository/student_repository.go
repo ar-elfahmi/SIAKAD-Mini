@@ -203,3 +203,14 @@ func (r *StudentRepository) CreateStudent(
 
 	return &student, nil
 }
+func (r *StudentRepository) GetStudentIDByUserID(ctx context.Context, userID int) (int, error) {
+	var studentID int
+
+	err := r.Pool.QueryRow(
+		ctx,
+		`SELECT id FROM students WHERE user_id = $1 AND deleted_at IS NULL`,
+		userID,
+	).Scan(&studentID)
+
+	return studentID, err
+}

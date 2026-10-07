@@ -195,6 +195,42 @@ func main() {
 				"error": "student not found",
 			})
 		}
+
+		role, ok := c.Locals("role").(string)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "token tidak valid",
+			})
+		}
+
+		if role == "mahasiswa" {
+			userIDFloat, ok := c.Locals("user_id").(float64)
+			if !ok {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "token tidak valid",
+				})
+			}
+
+			studentID, err := studentRepository.GetStudentIDByUserID(
+				c.Context(),
+				int(userIDFloat),
+			)
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+						"error": "student not found",
+					})
+				}
+				return err
+			}
+
+			if studentID != id {
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+					"error": "akses ditolak",
+				})
+			}
+		}
+
 		student, err := studentRepository.GetStudentByID(c.Context(), id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -204,6 +240,7 @@ func main() {
 			}
 			return err
 		}
+
 		return c.JSON(student)
 	})
 	app.Post("/api/v1/students", authMiddleware, func(c *fiber.Ctx) error {
