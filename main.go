@@ -142,48 +142,52 @@ func main() {
 		}
 		return c.JSON(courses)
 	})
-	app.Get("/api/v1/students", authMiddleware, func(c *fiber.Ctx) error {
-		page := c.QueryInt("page", 1)
-		if page < 1 {
-			page = 1
-		}
-		perPage := c.QueryInt("per_page", 10)
-		if perPage < 1 {
-			perPage = 10
-		}
-		if perPage > 50 {
-			perPage = 50
-		}
-		prodi := c.Query("prodi")
-		angkatan := c.QueryInt("angkatan", 0)
-		search := c.Query("search")
-		sort := c.Query("sort")
+	app.Get(
+		"/api/v1/students",
+		authMiddleware,
+		middleware.RequireRole("admin"),
+		func(c *fiber.Ctx) error {
+			page := c.QueryInt("page", 1)
+			if page < 1 {
+				page = 1
+			}
+			perPage := c.QueryInt("per_page", 10)
+			if perPage < 1 {
+				perPage = 10
+			}
+			if perPage > 50 {
+				perPage = 50
+			}
+			prodi := c.Query("prodi")
+			angkatan := c.QueryInt("angkatan", 0)
+			search := c.Query("search")
+			sort := c.Query("sort")
 
-		students, total, err := studentRepository.GetAllStudents(
-			c.Context(),
-			page,
-			perPage,
-			prodi,
-			angkatan,
-			search,
-			sort,
-		)
-		if err != nil {
-			return err
-		}
+			students, total, err := studentRepository.GetAllStudents(
+				c.Context(),
+				page,
+				perPage,
+				prodi,
+				angkatan,
+				search,
+				sort,
+			)
+			if err != nil {
+				return err
+			}
 
-		lastPage := (total + perPage - 1) / perPage
+			lastPage := (total + perPage - 1) / perPage
 
-		return c.JSON(fiber.Map{
-			"data": students,
-			"meta": model.StudentMeta{
-				CurrentPage: page,
-				PerPage:     perPage,
-				Total:       total,
-				LastPage:    lastPage,
-			},
+			return c.JSON(fiber.Map{
+				"data": students,
+				"meta": model.StudentMeta{
+					CurrentPage: page,
+					PerPage:     perPage,
+					Total:       total,
+					LastPage:    lastPage,
+				},
+			})
 		})
-	})
 	app.Get("/api/v1/students/:id", authMiddleware, func(c *fiber.Ctx) error {
 		id, parseErr := c.ParamsInt("id")
 		if parseErr != nil {
