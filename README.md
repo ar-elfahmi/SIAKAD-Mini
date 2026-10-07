@@ -3,7 +3,7 @@
 </p>
 
 > **Penggunaan AI:**
-> Saya menggunaan Chat GPT untuk memnadu saya daam mengerjakan modul ini namun kode yang di generate oleh chat gpt saya TULIS ULANG MANUAL hingga tahap 4 sehingga saya terlibat aktif dalam proses mengetik, brainstorming, mempertanyakan dan trobelshooting secara langsung. Tujuan saya adalah untuk mengetahui garis besar aplikasi di jalakan, dibuat dan digunakan. sehingga ketika saya sudah meengerti apa yang saya tulis maka kemudain saya dapat mendelegasikan nya kepada AI dengan mengikuti kode/cara piker/cara penulisan yang telah saya lakukan sebelumnya AI DIGUNAKAN UNTUK MENGURAGI REDUNDASI kode yang sudah bisa saya tulis sendiri agar menghemet waktu saya dalam menulis kode. Tujuannya Adalah untuk efesien waktu dan tidak mengorbankan pemahaman dan pembelajaran yang saya lakukan.
+> Saya menggunakan Chat GPT untuk membantu saya dalam mengerjakan modul ini namun kode yang di generate oleh chat gpt saya TULIS ULANG MANUAL hingga tahap 4 sehingga saya terlibat aktif dalam proses mengetik, brainstorming, mempertanyakan dan troubleshooting secara langsung. Tujuan saya adalah untuk mengetahui garis besar aplikasi dijalankan, dibuat dan digunakan. sehingga ketika saya sudah mengerti apa yang saya tulis maka kemudian saya dapat mendelegasikan nya kepada AI dengan mengikuti kode/cara pikir/cara penulisan yang telah saya lakukan sebelumnya AI DIGUNAKAN UNTUK MENGURANGI REDUNDASI kode yang sudah bisa saya tulis sendiri agar menghemat waktu saya dalam menulis kode. Tujuannya Adalah untuk efisien waktu dan tidak mengorbankan pemahaman dan pembelajaran yang saya lakukan.
 
 ---
 
