@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
@@ -101,6 +103,24 @@ func main() {
 				LastPage:    lastPage,
 			},
 		})
+	})
+	app.Get("/api/v1/students/:id", func(c *fiber.Ctx) error {
+		id, parseErr := c.ParamsInt("id")
+		if parseErr != nil {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "student not found",
+			})
+		}
+		student, err := studentRepository.GetStudentByID(c.Context(), id)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+					"error": "student not found",
+				})
+			}
+			return err
+		}
+		return c.JSON(student)
 	})
 	app.Listen(":3000")
 }
