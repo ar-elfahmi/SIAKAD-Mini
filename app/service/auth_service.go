@@ -1,14 +1,18 @@
 package service
 
 import (
+	"context"
 	"time"
 
-	"github.com/ar-elfahmi/SIAKAD-Mini/app/model"
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/ar-elfahmi/SIAKAD-Mini/app/model"
+	"github.com/ar-elfahmi/SIAKAD-Mini/app/repository"
 )
 
 type AuthService struct {
-	JWTSecret string
+	Repository *repository.AuthRepository
+	JWTSecret  string
 }
 
 func (s *AuthService) GenerateToken(user *model.User) (string, int, error) {
@@ -29,4 +33,10 @@ func (s *AuthService) GenerateToken(user *model.User) (string, int, error) {
 	}
 
 	return tokenString, expiresIn, nil
+}
+func (s *AuthService) GetUserByID(
+	ctx context.Context,
+	id int,
+) (*model.User, error) {
+	return s.Repository.GetUserByID(ctx, id)
 }

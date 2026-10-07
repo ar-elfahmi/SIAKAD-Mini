@@ -12,8 +12,16 @@ type LoginResponse struct {
 	User        User   `json:"user"`
 }
 
+type StudentProfile struct {
+	NIM      string `json:"nim"`
+	Nama     string `json:"nama"`
+	Prodi    string `json:"prodi"`
+	Angkatan int    `json:"angkatan"`
+}
+
 type User struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
+	ID       int             `json:"id"`
+	Email    string          `json:"email"`
+	Role     string          `json:"role"`
+	Students *StudentProfile `json:"students,omitempty"`
 }

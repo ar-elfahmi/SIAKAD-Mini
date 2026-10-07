@@ -15,6 +15,7 @@ import (
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/ar-elfahmi/SIAKAD-Mini/app/middleware"
 	"github.com/ar-elfahmi/SIAKAD-Mini/app/model"
 	"github.com/ar-elfahmi/SIAKAD-Mini/app/repository"
 	"github.com/ar-elfahmi/SIAKAD-Mini/app/service"
@@ -59,6 +60,10 @@ func main() {
 
 	app := fiber.New()
 
+	authMiddleware := middleware.RequireAuth(
+		os.Getenv("JWT_SECRET"),
+	)
+
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("yey my first hello world")
 	})
@@ -102,7 +107,29 @@ func main() {
 			User:        *user,
 		})
 	})
-	app.Get("/api/v1/courses", func(c *fiber.Ctx) error {
+	app.Get("/api/v1/auth/me", authMiddleware, func(c *fiber.Ctx) error {
+		userIDFloat, ok := c.Locals("user_id").(float64)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "token tidak valid",
+			})
+		}
+
+		userID := int(userIDFloat)
+
+		user, err := authRepository.GetUserByID(
+			c.Context(),
+			userID,
+		)
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "user tidak ditemukan",
+			})
+		}
+
+		return c.JSON(user)
+	})
+	app.Get("/api/v1/courses", authMiddleware, func(c *fiber.Ctx) error {
 		semester := c.QueryInt("semester", 0)
 		search := c.Query("search")
 		available := c.QueryBool("available", false)
@@ -115,7 +142,7 @@ func main() {
 		}
 		return c.JSON(courses)
 	})
-	app.Get("/api/v1/students", func(c *fiber.Ctx) error {
+	app.Get("/api/v1/students", authMiddleware, func(c *fiber.Ctx) error {
 		page := c.QueryInt("page", 1)
 		if page < 1 {
 			page = 1
@@ -157,7 +184,7 @@ func main() {
 			},
 		})
 	})
-	app.Get("/api/v1/students/:id", func(c *fiber.Ctx) error {
+	app.Get("/api/v1/students/:id", authMiddleware, func(c *fiber.Ctx) error {
 		id, parseErr := c.ParamsInt("id")
 		if parseErr != nil {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -175,7 +202,7 @@ func main() {
 		}
 		return c.JSON(student)
 	})
-	app.Post("/api/v1/students", func(c *fiber.Ctx) error {
+	app.Post("/api/v1/students", authMiddleware, func(c *fiber.Ctx) error {
 		var req model.CreateStudentRequest
 
 		if err := c.BodyParser(&req); err != nil {
